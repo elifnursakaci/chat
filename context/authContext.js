@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth, db } from "../firebaseConfig"; // firebaseConfig.js dosyanızdan doğru şekilde import edin
-
 import {doc, getDoc, setDoc} from "firebase/firestore"
  
 export const AuthContext = createContext();
@@ -12,43 +11,58 @@ export const AuthContextProvider = ({ children }) => {
 
     useEffect(() => {
         const unsub = onAuthStateChanged(auth, (user) => { 
+            //console.log("got user: ", user);
             if (user) {
                 setIsAuthenticated(true);
                 setUser(user);
+                updateUserData(user.uid);
             } else {
                 setIsAuthenticated(false);
                 setUser(null);
             }
         });
 
-        return unsub; // useEffect hook'u temizleme fonksiyonunu döndürün
+        return unsub; 
     }, []);
 
+    const updateUserData = async (userId) => {
+        const docRef = doc(db, "user", userId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            let data = docSnap.data();
+            setUser({...user, username: data.username, profileUrl: data.profileUrl, userId: data.userId})
+        }
+    }
+
     const login = async (email, password) => {
-        try {
-            const response = await signInWithEmailAndPassword(getAuth(), email, password);
-            console.log(response?.user);
-
-
-        } catch (error) {
-            console.log(error);
+        try{
+            const response = await signInWithEmailAndPassword(auth, email, password);
+            return {success: true};
+        }catch(e){
+            let msg = e.message;
+            if(msg.includes('(auth/invalid-email)')) msg='Invalid email'
+            if(msg.includes('(auth/invalid-credential)')) msg='Wrong credentials'
+            return {success: false, msg};
         }
     };
 
     const logout = async () => {
         try {
-            // Çıkış işlemleri burada gerçekleştirilebilir.
+           await signOut(auth);
+           return{succes:true}
         } catch (error) {
             console.log(error);
+            return{success:false, msg:error.message}
         }
     };
 
     const register = async (email, password, username, profileUrl) => {
         try {
-            const response = await createUserWithEmailAndPassword(getAuth(), email, password);
-            console.log(response?.user);
+            const response = await createUserWithEmailAndPassword(auth, email, password);
+            console.log("response.user", response?.user);
 
-            await setDoc(doc(db,"users", response?.user?.uid),{
+            await setDoc(doc(db, "users", response?.user?.uid),{
                 username,
                 profileUrl,
                 userId: response?.user?.uid
@@ -59,13 +73,14 @@ export const AuthContextProvider = ({ children }) => {
         } catch (e) {
             let msg = e.message;
             if(msg.includes("(auth/invalid-email)")) msg="invalid email"
+            if(msg.includes("(auth/email-already-in-use)")) msg="This email already in user"
             
             return{success: false, msg};
         }
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated, login, logout, register }}>
+        <AuthContext.Provider value={{ user, isAuthenticated, login, register, logout }}>
             {children}
         </AuthContext.Provider>
     );

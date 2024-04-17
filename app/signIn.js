@@ -1,185 +1,109 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Pressable,Alert } from 'react-native';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import { StatusBar } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, Pressable, Alert } from 'react-native'
+import React, { useRef, useState } from 'react'
+import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
+import { StatusBar } from 'expo-status-bar';
 import { Octicons } from '@expo/vector-icons';
-import {useRouter} from "expo-router"
+import { useRouter } from 'expo-router';
 import Loading from '../components/Loading';
-import { useNavigation } from '@react-navigation/native';
 import CustomKeyboardView from '../components/CustomKeyboardView';
-
+import { useAuth } from '../context/authContext';
 
 export default function SignIn() {
-    const router= useRouter();
-    const [loading, setLoading]=useState(false);
-    const emailRef= useRef("");
-    const passwordRef= useRef("");
-    const navigation = useNavigation();
-    const handleLogin = async () => {
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
+    const {login} = useAuth();
+
+    const emailRef = useRef("");
+const passwordRef = useRef("");
+
+    const handleLogin = async ()=>{
         if(!emailRef.current || !passwordRef.current){
-            Alert.alert('Sign In', 'Please fill all the fields');
-            return;
+            Alert.alert('Sign In', "Please fill all the fields!");
+            
         }
 
-        // login procces
-
-
+        setLoading(true);
+        const response = await login(emailRef.current, passwordRef.current);
+        setLoading(false);
+        console.log('sign in response: ', response);
+        if(!response.success){
+            Alert.alert('Sign In', response.msg);
+            
+        }
     }
-    return (
-        <CustomKeyboardView>
-        <View style={styles.container}>
-            <StatusBar style="dark" />
-            <View style={styles.contentContainer}>
-                <View style={styles.logoContainer}>
-                    <Image style={styles.logoImage} resizeMode='contain' source={require("../assets/images/sign.png")} />
-                </View>
-                <View style={styles.formContainer}>
-                    <Text style={styles.title}>Sign In</Text>
-                    <View style={styles.inputContainer}>
-                        <Octicons name="mail" size={24} color="gray" />
-                        <TextInput
-                        onChangeText={value=>emailRef.current=value}
-                            style={styles.input}
-                            placeholder="Email"
-                            placeholderTextColor="gray"
-                        />
-                    </View>
+  return (
+    <CustomKeyboardView>
+      <StatusBar style="dark" />
+      <View style={{paddingTop: hp(8), paddingHorizontal: wp(5)}} className="flex-1 gap-12">
+        {/* signIn image */}
+        <View className="items-center">
+            {/* <Image style={{height: hp(25)}} resizeMode='contain' source={require('../assets/images/login.png')} /> */}
+        </View>
 
-                    <View style={styles.inputContainer}>
-                    <Octicons name="lock" size={24} color="gray" />
+
+        <View className="gap-10">
+            <Text style={{fontSize: hp(4)}} className="font-bold tracking-wider text-center text-neutral-800">Sign In</Text>
+            {/* inputs */}
+            <View className="gap-4">
+                <View style={{height: hp(7)}} className="flex-row gap-4 px-4 bg-neutral-100 items-center rounded-xl">
+                    <Octicons name="mail" size={hp(2.7)} color="gray" />
+                    <TextInput
+                        onChangeText={value=> emailRef.current=value}
+                        style={{fontSize: hp(2)}}
+                        className="flex-1 font-semibold text-neutral-700"
+                        placeholder='Email address'
+                        placeholderTextColor={'gray'}
+                    />
+                </View>
+                <View className="gap-3">
+                    <View style={{height: hp(7)}} className="flex-row gap-4 px-4 bg-neutral-100 items-center rounded-xl">
+                        <Octicons name="lock" size={hp(2.7)} color="gray" />
                         <TextInput
-                        onChangeText={value=>passwordRef.current=value}
-                            style={styles.input}
-                            placeholder="Password"
+                            onChangeText={value=> passwordRef.current=value}
+                            style={{fontSize: hp(2)}}
+                            className="flex-1 font-semibold text-neutral-700"
+                            placeholder='Password'
                             secureTextEntry
-                            placeholderTextColor="gray"
+                            placeholderTextColor={'gray'}
                         />
                     </View>
-                    <Text style={styles.forgot}>Forgot Password ?</Text>
+                    <Text style={{fontSize: hp(1.8)}} className="font-semibold text-right text-neutral-500">Forgot password?</Text>
                 </View>
 
-                {/* {submit button} */}
+                {/* submit button */}
 
                 <View>
                     {
-                        loading?(
-                            <View style={{justifyContent:"center" , alignItems:"center"}}>
-                                <Loading size={hp(10)}/>
+                        loading? (
+                            <View className="flex-row justify-center">
+                                <Loading size={hp(6.5)} />
                             </View>
-
                         ):(
-                            <TouchableOpacity onPress={handleLogin}>
-                    <Text style={styles.buttonText}>Sign In</Text>
-                </TouchableOpacity>
-
+                            <TouchableOpacity onPress={handleLogin} style={{height: hp(6.5)}} className="bg-indigo-500 rounded-xl justify-center items-center">
+                                <Text style={{fontSize: hp(2.7)}} className="text-white font-bold tracking-wider">
+                                    Sign In
+                                </Text>
+                            </TouchableOpacity>
                         )
                     }
                 </View>
 
-
                 
 
-                {/* {sign up text} */}
-                <View style={styles.signUpContainer}>
-                    <Text style={styles.signUpText}>Don't have an account?</Text>
+                {/* sign up text */}
 
-                    <Pressable onPress={()=>router.push('signUp')}>
-                    <Text style={styles.signUpLink}>Sign Up</Text>
+                <View className="flex-row justify-center">
+                    <Text style={{fontSize: hp(1.8)}} className="font-semibold text-neutral-500">Don't have an account? </Text>
+                    <Pressable onPress={()=> router.push('signUp')}>
+                        <Text style={{fontSize: hp(1.8)}} className="font-bold text-indigo-500">Sign Up</Text>
                     </Pressable>
+                    
                 </View>
-
-
-
                 
             </View>
+            
         </View>
-        </CustomKeyboardView>
-    );
+      </View>
+    </CustomKeyboardView>
+  )
 }
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    contentContainer: {
-        paddingTop: hp(9),
-        paddingHorizontal: wp(5),
-        gap:20,
-    },
-    logoContainer: {
-        alignItems: "center",
-    },
-    logoImage: {
-        height: hp(25),
-    },
-    formContainer: {
-        marginTop: hp(3),
-    },
-    title: {
-        fontSize: 30,
-        fontWeight: "bold",
-        color: "gray",
-        textAlign: "center",
-    },
-    inputContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#F2F2F2", 
-        borderRadius: 10,
-        paddingHorizontal: 10,
-        paddingVertical: 10,
-        marginTop: 10,
-    },
-    input: {
-        fontSize: 20,
-        flex: 1,
-        fontWeight: "500",
-        color: "gray", 
-        marginLeft: 10,
-    },
-    forgot: {
-        fontSize: 15,
-        fontWeight: "500",
-        color: "gray",
-        textAlign: "right",
-        marginTop: 10,
-        marginRight: 10,
-    },
-    buttonText: {
-        fontSize: 18,
-        textAlign: "center",
-        fontWeight: "bold",
-        color: "white", 
-        backgroundColor: "#2E94B5", 
-        paddingHorizontal: 15,
-        paddingVertical: 12,
-        marginTop: 15,
-        marginBottom: 15,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    signUpContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        marginTop: 20,
-    },
-    signUpText: {
-        fontSize: 16,
-        color: "gray",
-        marginRight: 5,
-    },
-    signUpLink: {
-        fontSize: 16,
-        color: "#2E94B5", // Sign Up link rengi
-        fontWeight: "bold",
-        textDecorationLine: "underline",
-    },
-    
-});
-
